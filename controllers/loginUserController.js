@@ -3,6 +3,7 @@ const mariadb = require('mariadb');
 const express = require('express');
 const app = express();
 const passport = require('passport');
+const bcrypt = require('bcrypt');
 
 //create pool - สร้าง pool ของการเชื่อมต่อกับ MariaDB
 const pool = mariadb.createPool({
@@ -12,7 +13,6 @@ const pool = mariadb.createPool({
     database: 'user_authentication',
     connectionLimit: 10
 });
-
 
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
@@ -26,14 +26,9 @@ app.use(cookieParser());
 app.use(passport.initialize()); //ข้อมูลผู้ใช้ที่ได้จากการตรวจสอบตัวตน
 app.use(passport.session());
 
-
 passport.use(new LocalStrategy(
     async (username, password, done) => {
-
-        //ดึงข้อมูล username และ password จาก request body ที่ส่งมา
-        //await ช่วยให้โค้ดทำงานได้อย่างเป็นลำดับ และไม่ต้องใช้ callback functions เพื่อจัดการกับ asynchronous operations 
-        //ใช้ pool เพื่อขอ connection จาก pool และ await จนกว่า connection จะถูกสร้างขึ้น
-    const connection = await pool.getConnection();
+        const connection = await pool.getConnection();
         try {
             const result = await connection.query(
                 'SELECT id, username, password FROM users WHERE username = ?',
@@ -48,8 +43,10 @@ passport.use(new LocalStrategy(
 
             const user = result[0];
 
-            // Check password
-            if (password === user.password) {
+            // ใช้ bcrypt เพื่อเปรียบเทียบรหัสผ่านที่ hash ในฐานข้อมูล
+            const passwordMatch = await bcrypt.compare(password, user.password);
+
+            if (passwordMatch) {
                 return done(null, user);
             } else {
                 return done(null, false, { 
@@ -95,6 +92,7 @@ passport.deserializeUser(async (id, done) => { //session ID ที่ถูก�
     }
 });
 
+// Middleware สำหรับการตรวจสอบตัวตน
 module.exports = async (req, res, next) => {
     passport.authenticate('local', {
         successRedirect: '/',

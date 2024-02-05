@@ -1,5 +1,5 @@
 const mariadb = require('mariadb');
-
+const bcrypt = require('bcrypt');
 
 const pool = mariadb.createPool({
     host: '127.0.0.1',
@@ -14,15 +14,17 @@ module.exports = async (req, res) => {
 
     const { username, password } = req.body;
 
-    
+    // Hash password in the database
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const connection = await pool.getConnection();
 
     try {
         const result = await connection.query(
             'INSERT INTO users (username, password) VALUES (?, ?)',
-            [username, password] // ใช้รหัสผ่านที่ไม่ได้ถูก hash
+            [username, hashedPassword]
         );
+
         console.log('User registered successfully!!');
         return res.redirect('/login');
     } catch (error) {
@@ -32,6 +34,7 @@ module.exports = async (req, res) => {
         req.flash('data', req.body);
         return res.redirect('/');
     } finally {
-        connection.release(); // หลังจากที่ connection ได้ถูกใช้งานเสร็จสิ้น โดยทำให้ connection นั้นถูกคืนให้กับ pool เพื่อให้สามารถให้ connection อื่นใน pool ใช้งานได้
+        connection.release();
+        // หลังจากที่ connection ได้ถูกใช้งานเสร็จสิ้น โดยทำให้ connection นั้นถูกคืนให้กับ pool เพื่อให้สามารถให้ connection อื่นใน pool ใช้งานได้
     }
 };
