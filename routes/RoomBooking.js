@@ -1,11 +1,11 @@
 const Router  = require("express");
 const router = express.Router();
 const pool = require('./../db')
-connection = pool.getConnection();
 
 router.get('/vacentRoom' , async(req , res) => {
     try {
-        const [rows, fields] = await pool.execute('SELECT * FROM rooms WHERE status = "vacant"');
+        const connection = await pool.getConnection();
+        const [rows, fields] = await connection.execute('SELECT * FROM rooms WHERE status = "vacant"');
         res.status(200).json(rows);
     } catch (error) {
         console.error('Error fetching vacant rooms:', error);
@@ -15,7 +15,8 @@ router.get('/vacentRoom' , async(req , res) => {
 
 router.post('/bookRoom', async (req, res) => {
     try {
-        const [rows, fields] = await pool.execute('INSERT INTO RoomBooking (student_id, room_id, duration) VALUES (?, ?, ?)'
+        const connection = await pool.getConnection();
+        const [rows, fields] = await connection.execute('INSERT INTO RoomBooking (student_id, room_id, duration) VALUES (?, ?, ?)'
         , [student_id, room_id, duration]);
         res.status(200).json({ message: 'Booking room success' });
     } catch (error) {
@@ -26,7 +27,8 @@ router.post('/bookRoom', async (req, res) => {
 
 router.get('/roomBooking', async(req, res) => {
     try {
-        const [rows, fields] = await pool.execute('SELECT * FROM RoomBooking');
+        const connection = await pool.getConnection();
+        const [rows, fields] = await connection.execute('SELECT * FROM RoomBooking');
         res.status(200).json(rows);
     } catch (error) {
         console.error('Error fetching room bookings:', error);
@@ -37,7 +39,8 @@ router.get('/roomBooking', async(req, res) => {
 router.delete('/cancelRoomBooking/:bookingId', async(req, res) => {
     const bookingId = req.params.bookingId;
     try {
-        const [rows, fields] = await pool.execute('SELECT * FROM room_booking WHERE RoomidBooking = ?', [bookingId]);
+        const connection = await pool.getConnection();
+        const [rows, fields] = await connection.execute('SELECT * FROM room_booking WHERE RoomidBooking = ?', [bookingId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Booking not found' });
         }
