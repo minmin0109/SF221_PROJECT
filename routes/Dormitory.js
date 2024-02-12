@@ -1,4 +1,4 @@
-const Router  = require("express");
+const express = require('express')
 const router = express.Router();
 const pool = require('./../db');
 
@@ -6,7 +6,7 @@ const pool = require('./../db');
 router.get('/vacantRoom', async (req, res) => {
     try {
       const connection = await pool.getConnection();
-      const vacantRooms = await connection.query('SELECT * FROM dorm_room WHERE status = $1', ['vacant']);
+      const vacantRooms = await connection.query('SELECT * FROM dorm_room WHERE status = $1', ['Available']);
       res.json(vacantRooms.rows);
     } catch (error) {
       console.error('Error fetching vacant rooms:', error);
@@ -18,7 +18,7 @@ router.post('/bookRoom', async (req, res) => {
     try {
         const connection = await pool.getConnection();
         const { student_id, room_id, duration } = req.body; 
-        await connection.execute('INSERT INTO RoomBooking (student_id, room_id, duration) VALUES (?, ?, ?)'
+        await connection.execute('INSERT INTO dorm_room (owner_id, DRoom_id, duration) VALUES (?, ?, ?)'
         , [student_id, room_id, duration]);
         res.status(200).json({ message: 'Booking room success' });
     } catch (error) {
@@ -31,7 +31,7 @@ router.delete('/cancelDormBooking/:booking_id', async (req, res) => {
     try {
         const connection = await pool.getConnection();
         const bookingId = req.params.booking_id; 
-        await connection.execute('DELETE FROM RoomBooking WHERE booking_id = ?', [bookingId]);
+        await connection.execute('DELETE FROM dorm_room WHERE DRoom_id = ?', [DRoom_id]);
         res.status(200).json({ message: 'Room booking canceled successfully' });
     } catch (error) {
         console.error('Error canceling room booking:', error);
