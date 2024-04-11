@@ -1,42 +1,40 @@
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
-
-router.get('/complain', (req, res) => {
-    res.status(200).json({ message: 'No complaints available' });
-});
-
-router.post('/complain/sendMail', async (req, res) => {
-    try {
-        const { to, subject, text } = req.body;
-
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'your_email@gmail.com',
-                pass: 'your_password'
-            }
-        });
-
-        const mailOptions = {
-            from: 'your_email@gmail.com',
-            to: to,
-            subject: subject,
-            text: text
-        };
-        transporter.sendMail(mailOptions, function(error, info) {
-            if (error) {
-                console.error('Error sending email:', error);
-                res.status(500).json({ error: 'Failed to send email' });
-            } else {
-                console.log('Email sent:', info.response);
-                res.status(200).json({ message: 'Email sent successfully' });
-            }
-        });
-    } catch (error) {
-        console.error('Error sending email:', error);
-        res.status(500).json({ error: 'Failed to send email' });
-    }
-});
-
-module.exports = router;
+// สร้าง Router สำหรับ GET ข้อมูลการร้องเรียน
+router.get('/complains', (req, res) => {
+    connection.query('SELECT * FROM complain', (error, results) => {
+      if (error) {
+        console.error('Error fetching complains:', error);
+        res.status(500).send('Error fetching complains');
+        return;
+      }
+      res.json(results);
+    });
+  });
+  
+  // สร้าง Router สำหรับ POST การร้องเรียน
+  router.post('/complains', (req, res) => {
+    const { studentId, studentName, subject, description } = req.body;
+    connection.query('INSERT INTO complain (studentId, studentName, subject, description) VALUES (?, ?, ?, ?)', 
+    [studentId, studentName, subject, description], 
+    (error, results) => {
+      if (error) {
+        console.error('Error inserting complain:', error);
+        res.status(500).send('Error inserting complain');
+        return;
+      }
+      res.status(201).send('Complain submitted successfully');
+    });
+  });
+  
+  // สร้าง Router สำหรับ GET รายการการร้องเรียน
+  router.get('/complain_bookings', (req, res) => {
+    connection.query('SELECT * FROM complain', (error, results) => {
+      if (error) {
+        console.error('Error fetching complain bookings:', error);
+        res.status(500).send('Error fetching complain bookings');
+        return;
+      }
+      res.json(results);
+    });
+  });

@@ -1,67 +1,57 @@
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
-const fs = require('fs');
-const ejs = require('ejs');
 
-const transporter = nodemailer.createTransport({
-    service: 'Gmail',
-    auth: {
-        user: 'your-email@gmail.com',
-        pass: 'your-email-password',
-    },
-});
-
-const templatePath = './../template/email-template.html'; 
-const emailTemplate = fs.readFileSync(templatePath, 'utf8');
-
-const sendEmailWithTemplate = (mailOptions) => {
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error('Error occurred while sending email:', error);
-        } else {
-            console.log('Email sent:', info.response);
-        }
+// สร้าง Router สำหรับ GET ข้อมูลการนัดหมาย
+router.get('/appointments', (req, res) => {
+    connection.query('SELECT * FROM appointments', (error, results) => {
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        res.status(500).send('Error fetching appointments');
+        return;
+      }
+      res.json(results);
     });
-};
+  });
+  
+   // สร้าง Router สำหรับ POST การนัดหมาย
+router.post('/appointments', (req, res) => {
+    const { studentId, studentName, appointmentDate, subject } = req.body;
+    connection.query('INSERT INTO appointments (studentId, studentName, appointmentDate, subject, status) VALUES (?, ?, ?, ?, ?)', 
+    [studentId, studentName, appointmentDate, subject, status], 
+    (error, results) => {
+      if (error) {
+        console.error('Error booking appointment:', error);
+        res.status(500).send('Error booking appointment');
+        return;
+      }
+      res.status(201).send('Appointment booked successfully');
+    });
+  });
+  
+  // สร้าง Router สำหรับ PUT อัปเดตสถานะการนัดหมาย
+  router.put('/appointments/:studentId', (req, res) => {
+    const { studentId } = req.params;
+    const { status } = req.body;
+    connection.query('UPDATE appointments SET status = ? WHERE studentId = ?', [status, studentId], (error, results) => {
+      if (error) {
+        console.error('Error updating appointment status:', error);
+        res.status(500).send('Error updating appointment status');
+        return;
+      }
+      res.send('Appointment status updated successfully');
+    });
+  });
+  
 
-router.get('/AlertEmergency', async (req, res) => {
-    const { name, studentId, faculty, address } = req.query;
-    const currentDate = new Date().toDateString();
-    try {
-        const renderedEmail = ejs.render(emailTemplate, { currentDate, name, studentId, faculty, address });
-        const mailOptions = {
-            from: 'your-email@gmail.com',
-            to: 'engr@example.com',
-            subject: 'Emergency Email',
-            html: renderedEmail,
-        };
-        sendEmailWithTemplate(mailOptions);
-        res.send('Email sent successfully!');
-    } catch (error) {
-        console.error('Error sending email:', error);
-        res.status(500).send('Error sending email');
-    }
-});
-
-router.get('/AppointmentData', async (req, res) => {
-    const { name, studentId, faculty, appointmentdata } = req.query; 
-    const currentDate = new Date().toDateString();
-    try {
-        const renderedEmail = ejs.render(emailTemplate, { currentDate, name, studentId, faculty, appointmentdata });
-        const mailOptions = {
-            from: 'your-email@gmail.com',
-            to: 'engr@example.com',
-            subject: 'Appointment Email',
-            html: renderedEmail,
-        };
-        sendEmailWithTemplate(mailOptions);
-        res.send('Email sent successfully!');
-    } catch (error) {
-        console.error('Error sending email:', error);
-        res.status(500).send('Error sending email');
-    }
-
-});
-
-module.exports = router;
+  // สร้าง Router สำหรับ GET รายการการนัดหมาย
+  router.get('/appointment_bookings', (req, res) => {
+    connection.query('SELECT studentId, studentName, appointmentDate, subject, status FROM appointments', (error, results) => {
+      if (error) {
+        console.error('Error fetching appointment bookings:', error);
+        res.status(500).send('Error fetching appointment bookings');
+        return;
+      }
+      res.json(results);
+    });
+  });
+  
